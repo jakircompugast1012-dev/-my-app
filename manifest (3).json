@@ -1,0 +1,16 @@
+{
+  "background_color": "rgb(0, 0, 0)",
+  "dir": "auto",
+  "display": "browser",
+  "name": "Live BD 4D Results",
+  "orientation": "any",
+  "scope": "/https://jakircompugast1012-dev.github.io/-my-app/",
+  "short_name": "Live BD 4D Results",
+  "start_url": "/https://jakircompugast1012-dev.github.io/-my-app/",
+  "theme_color": "rgb(0, 0, 0)",
+  "id": "/https://jakircompugast1012-dev.github.io/-my-app/",
+  "description": "Live BD 4D Results",
+  "categories": [
+    "business"
+  ]
+}
