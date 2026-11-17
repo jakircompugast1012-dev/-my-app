@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live BD_4D Results - Customer App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #121212; color: #E0E0E0; touch-action: manipulation; }
+        .app-header { background-color: #C62828; }
+        .card-bg { background-color: #1E1E1E; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen flex justify-center bg-zinc-950">
+    <div class="w-full max-w-md bg-zinc-900 min-h-screen flex flex-col shadow-2xl relative border-x border-zinc-800">
+        <header class="app-header text-white px-4 py-3 flex items-center justify-between shadow-md sticky top-0 z-50">
+            <div class="flex items-center space-x-3">
+                <button id="backBtn" onclick="showView('grid')" class="hidden text-white hover:text-zinc-200 text-lg p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h1 class="font-bold text-lg tracking-wide flex items-center gap-2">
+                    <span class="bg-white text-red-700 text-xs px-1.5 py-0.5 rounded font-black">BD</span>
+                    <span>Live BD_4D Results</span>
+                </h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="text-[10px] font-bold uppercase tracking-wider bg-black/25 px-2 py-0.5 rounded-full text-emerald-300 border border-white/15 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Cloud
+                </span>
+                <button onclick="refreshResults()" title="Refresh" class="hover:text-zinc-200 transition p-1"><i id="refreshIcon" class="fa-solid fa-rotate-right"></i></button>
+            </div>
+        </header>
+
+        <!-- Quick Tabs -->
+        <div id="quickTabs" class="bg-zinc-800 border-b border-zinc-700 px-2 py-2 flex items-center space-x-2 overflow-x-auto no-scrollbar">
+            <button onclick="selectApp('Toto-B'); showView('result');" id="tab-Toto-B" class="app-tab flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-700 text-white transition"><i class="fa-solid fa-circle-dot text-yellow-300"></i> Toto-B</button>
+            <button onclick="selectApp('GoLd _B'); showView('result');" id="tab-GoLd _B" class="app-tab flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition"><i class="fa-solid fa-coins text-yellow-400"></i> GoLd _B</button>
+            <button onclick="selectApp('Dimon_B'); showView('result');" id="tab-Dimon_B" class="app-tab flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition"><i class="fa-solid fa-gem text-cyan-400"></i> Dimon_B</button>
+            <button onclick="selectApp('Silver_B'); showView('result');" id="tab-Silver_B" class="app-tab flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition"><i class="fa-solid fa-medal text-slate-300"></i> Silver_B</button>
+        </div>
+
+        <main class="flex-grow p-4 pb-24 overflow-y-auto">
+            <div id="toast" class="hidden mb-4 p-3 bg-emerald-950/95 border border-emerald-500 text-emerald-100 rounded-lg text-xs font-semibold text-center flex items-center justify-between shadow-lg">
+                <span id="toastMsg">Live Updated from Cloud!</span>
+                <button onclick="hideToast()" class="p-1"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Home Grid View -->
+            <div id="view-grid" class="space-y-5">
+                <div class="bg-gradient-to-r from-red-900/50 to-zinc-800 p-3.5 rounded-xl border border-red-800/40 shadow">
+                    <div class="flex justify-between items-center text-xs text-zinc-400 font-semibold mb-1">
+                        <span class="flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>TODAY'S LIVE DRAW</span>
+                        <span id="liveDateText" class="text-yellow-400 font-mono"></span>
+                    </div>
+                    <p class="text-xs text-zinc-200 leading-relaxed">Select any app below to view live 4D winning numbers, check your ticket, or dial USSD.</p>
+                </div>
+
+                <div>
+                    <h2 class="text-xs uppercase font-bold text-zinc-400 tracking-wider mb-3 px-1 flex items-center gap-1.5"><i class="fa-solid fa-cubes text-red-500"></i> BD 4D Live Apps (4)</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div onclick="selectApp('Toto-B'); showView('result');" class="group cursor-pointer bg-zinc-800 hover:bg-zinc-700/80 p-3.5 rounded-xl border border-zinc-700 flex flex-col items-center justify-center text-center transition shadow-md">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white shadow-lg mb-2"><i class="fa-solid fa-circle-dot text-2xl"></i></div>
+                            <span class="font-bold text-sm text-zinc-100">Toto-B</span>
+                            <span id="grid-1st-Toto-B" class="text-[11px] font-mono text-yellow-400 mt-0.5">1st: 5112</span>
+                        </div>
+                        <div onclick="selectApp('GoLd _B'); showView('result');" class="group cursor-pointer bg-zinc-800 hover:bg-zinc-700/80 p-3.5 rounded-xl border border-zinc-700 flex flex-col items-center justify-center text-center transition shadow-md">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-700 flex items-center justify-center text-zinc-950 shadow-lg mb-2"><i class="fa-solid fa-coins text-2xl"></i></div>
+                            <span class="font-bold text-sm text-zinc-100">GoLd _B</span>
+                            <span id="grid-1st-GoLd _B" class="text-[11px] font-mono text-yellow-400 mt-0.5">1st: 8821</span>
+                        </div>
+                        <div onclick="selectApp('Dimon_B'); showView('result');" class="group cursor-pointer bg-zinc-800 hover:bg-zinc-700/80 p-3.5 rounded-xl border border-zinc-700 flex flex-col items-center justify-center text-center transition shadow-md">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-700 flex items-center justify-center text-white shadow-lg mb-2"><i class="fa-solid fa-gem text-2xl"></i></div>
+                            <span class="font-bold text-sm text-zinc-100">Dimon_B</span>
+                            <span id="grid-1st-Dimon_B" class="text-[11px] font-mono text-yellow-400 mt-0.5">1st: 4490</span>
+                        </div>
+                        <div onclick="selectApp('Silver_B'); showView('result');" class="group cursor-pointer bg-zinc-800 hover:bg-zinc-700/80 p-3.5 rounded-xl border border-slate-500/40 flex flex-col items-center justify-center text-center transition shadow-md relative">
+                            <span class="absolute top-2 right-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-700 text-slate-200">New</span>
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 flex items-center justify-center text-zinc-950 shadow-lg mb-2"><i class="fa-solid fa-medal text-2xl"></i></div>
+                            <span class="font-bold text-sm text-zinc-100">Silver_B</span>
+                            <span id="grid-1st-Silver_B" class="text-[11px] font-mono text-yellow-400 mt-0.5">1st: 6382</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Check Number -->
+                <div class="bg-zinc-800/90 rounded-xl p-4 border border-zinc-700 shadow-md">
+                    <h3 class="font-bold text-sm text-yellow-400 flex items-center gap-2 mb-2"><i class="fa-solid fa-magnifying-glass"></i> Check Your 4D Number</h3>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="checkNumberInput" maxlength="4" inputmode="numeric" placeholder="e.g. 6382" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 font-mono text-base tracking-widest focus:outline-none focus:border-yellow-500">
+                        <button onclick="checkCustomerNumber()" class="flex-shrink-0 bg-red-700 hover:bg-red-600 text-white font-bold text-xs px-4 py-2.5 rounded-lg">Check</button>
+                    </div>
+                    <div id="checkResultBox" class="hidden mt-3 p-2.5 rounded-lg text-xs border"></div>
+                </div>
+
+                <!-- USSD Pin Generator -->
+                <div class="bg-zinc-800/90 rounded-xl p-4 border border-zinc-700 shadow-md">
+                    <h3 class="font-bold text-sm text-red-400 flex items-center gap-2 mb-2"><i class="fa-solid fa-phone-volume"></i> Auto USSD Pin Generator</h3>
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="font-mono text-sm bg-zinc-900 text-zinc-300 px-2.5 py-2 rounded-lg border border-zinc-700 font-bold">*155*</span>
+                        <input type="number" id="ussdInput" value="7584" oninput="updateUSSDPreview()" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 font-mono text-base focus:outline-none">
+                        <span class="font-mono text-sm bg-zinc-900 text-zinc-300 px-2.5 py-2 rounded-lg border border-zinc-700 font-bold">#</span>
+                    </div>
+                    <div class="bg-zinc-900 p-2.5 rounded-lg border border-zinc-800 flex justify-between items-center mb-3">
+                        <span class="text-xs text-zinc-400">Generated Code:</span>
+                        <span id="ussdResultText" class="font-mono font-bold text-yellow-400 text-base">*155*7584#</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <a id="ussdDialBtn" href="tel:*155*7584%23" class="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 px-3 rounded-lg text-center"><i class="fa-solid fa-phone"></i> Dial Code</a>
+                        <button onclick="copyUSSDCode()" class="flex items-center justify-center gap-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 font-semibold text-xs py-2.5 px-3 rounded-lg"><i class="fa-solid fa-copy"></i> Copy Code</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Detail View -->
+            <div id="view-result" class="hidden space-y-4">
+                <div class="card-bg border border-zinc-700 rounded-xl overflow-hidden shadow-lg">
+                    <div class="bg-gradient-to-r from-zinc-800 to-zinc-900 p-3 border-b border-zinc-700 flex justify-between items-center">
+                        <div class="flex items-center space-x-2.5">
+                            <span id="resultAppBadgeIcon" class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white text-sm font-bold shadow"><i class="fa-solid fa-circle-dot"></i></span>
+                            <div>
+                                <h2 id="resultAppTitle" class="font-bold text-base text-zinc-100">Toto-B Results</h2>
+                                <p class="text-[10px] text-zinc-400 font-mono">Draw <span id="drawNumber">#729/26</span> • <span id="drawDate">14/11/26 (Sat)</span></p>
+                            </div>
+                        </div>
+                        <button onclick="saveFavouriteAppNumber()" title="Save" class="text-yellow-400 text-lg p-1.5"><i id="favIcon" class="fa-regular fa-star"></i></button>
+                    </div>
+                    <div class="p-4 border-b border-zinc-800 grid grid-cols-3 gap-2 text-center bg-zinc-900/60">
+                        <div class="bg-zinc-800/80 p-2.5 rounded-lg border border-red-900/50 shadow"><span class="text-[10px] font-bold text-red-400 uppercase block mb-1">1st Prize</span><span id="prize1st" class="text-xl font-extrabold text-white font-mono tracking-widest">5112</span></div>
+                        <div class="bg-zinc-800/80 p-2.5 rounded-lg border border-zinc-700 shadow"><span class="text-[10px] font-bold text-zinc-400 uppercase block mb-1">2nd Prize</span><span id="prize2nd" class="text-xl font-extrabold text-zinc-200 font-mono tracking-widest">7496</span></div>
+                        <div class="bg-zinc-800/80 p-2.5 rounded-lg border border-zinc-700 shadow"><span class="text-[10px] font-bold text-zinc-400 uppercase block mb-1">3rd Prize</span><span id="prize3rd" class="text-xl font-extrabold text-zinc-200 font-mono tracking-widest">5924</span></div>
+                    </div>
+                    <div class="grid grid-cols-2 divide-x divide-zinc-800 bg-zinc-900">
+                        <div class="p-3"><h3 class="text-center text-xs font-bold text-yellow-500 uppercase pb-2 border-b border-zinc-800 mb-2">Special</h3><div id="specialGrid" class="grid grid-cols-2 gap-y-1.5 gap-x-2 text-center font-mono text-sm text-zinc-300 font-semibold"></div></div>
+                        <div class="p-3"><h3 class="text-center text-xs font-bold text-zinc-400 uppercase pb-2 border-b border-zinc-800 mb-2">Consolation</h3><div id="consolationGrid" class="grid grid-cols-2 gap-y-1.5 gap-x-2 text-center font-mono text-sm text-zinc-400 font-semibold"></div></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="showView('grid')" class="py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-table-cells-large"></i> All Apps</button>
+                    <button onclick="copyCurrentResult()" class="py-3 bg-red-700 hover:bg-red-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-share-nodes"></i> Copy Result</button>
+                </div>
+            </div>
+
+            <!-- History View -->
+            <div id="view-history" class="hidden space-y-4">
+                <div class="flex justify-between items-center mb-2"><h2 class="text-sm font-bold text-zinc-300 uppercase"><i class="fa-solid fa-clock-rotate-left text-red-500"></i> History</h2><button onclick="clearHistory()" class="text-xs text-red-400">Clear All</button></div>
+                <div id="historyList" class="space-y-2"></div>
+            </div>
+
+            <!-- Favourites View -->
+            <div id="view-favourites" class="hidden space-y-4">
+                <h2 class="text-sm font-bold text-zinc-300 uppercase"><i class="fa-solid fa-star text-yellow-400"></i> Saved Results</h2>
+                <div id="favouritesList" class="space-y-2"></div>
+            </div>
+        </main>
+
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-900 border-t border-zinc-800 grid grid-cols-3 py-2.5 z-40 text-center shadow-lg">
+            <button onclick="showView('grid')" id="nav-grid" class="flex flex-col items-center justify-center text-red-500"><i class="fa-solid fa-house text-lg"></i><span class="text-[10px] mt-1">Home</span></button>
+            <button onclick="showView('history')" id="nav-history" class="flex flex-col items-center justify-center text-zinc-400"><i class="fa-solid fa-clock-rotate-left text-lg"></i><span class="text-[10px] mt-1">History</span></button>
+            <button onclick="showView('favourites')" id="nav-favourites" class="flex flex-col items-center justify-center text-zinc-400"><i class="fa-solid fa-star text-lg"></i><span class="text-[10px] mt-1">Favourites</span></button>
+        </nav>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        // =========================================================================
+        // নিচের firebaseConfig অংশটি মুছে আপনার প্রজেক্টের আসল Firebase Config বসাবেন
+        // (অ্যাডমিন অ্যাপ এবং এই কাস্টমার অ্যাপ—উভয় জায়গায় একই Config থাকতে হবে)
+        // =========================================================================
+        const firebaseConfig = {
+              apiKey: "AIzaSyDKLDw3s8A2y5dRUGxZWXqywDAVJHo9ov0",
+  authDomain: "live-bd-4d-309f5.firebaseapp.com",
+  databaseURL: "https://live-bd-4d-309f5-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "live-bd-4d-309f5",
+  storageBucket: "live-bd-4d-309f5.firebasestorage.app",
+  messagingSenderId: "317722789226",
+  appId: "1:317722789226:web:dcb8f2516f3fb7e31f1113"
+        };
+        // =========================================================================
+
+        firebase.initializeApp(firebaseConfig);
+        const customerDbRef = firebase.database().ref('bd4d_live_data');
+
+        let currentApp = 'Toto-B';
+        let appData = {
+            'Toto-B': { drawNumber: '#729/26', drawDate: '16/11/26 (Mon)', iconClass: 'fa-circle-dot', themeColor: 'bg-red-600', iconTextClass: 'text-white', prize1st: '5112', prize2nd: '7496', prize3rd: '5924', special: ['3077','9846','9887','6134','8779','5828','1154','6200','4207','0002'], consolation: ['7453','6909','2921','2764','9274','9146','8257','9848','2416','3619'] },
+            'GoLd _B': { drawNumber: '#729/26', drawDate: '16/11/26 (Mon)', iconClass: 'fa-coins', themeColor: 'bg-amber-600', iconTextClass: 'text-white', prize1st: '8821', prize2nd: '3410', prize3rd: '9012', special: ['1234','5678','9101','1121','3141','5161','7181','9202','2232','4252'], consolation: ['6272','8292','0313','2333','4353','6373','8393','0414','2434','4454'] },
+            'Dimon_B': { drawNumber: '#729/26', drawDate: '16/11/26 (Mon)', iconClass: 'fa-gem', themeColor: 'bg-cyan-600', iconTextClass: 'text-white', prize1st: '4490', prize2nd: '1589', prize3rd: '7731', special: ['9911','8822','7733','6644','5555','4466','3377','2288','1199','0000'], consolation: ['1010','2020','3030','4040','5050','6060','7070','8080','9090','1212'] },
+            'Silver_B': { drawNumber: '#729/26', drawDate: '16/11/26 (Mon)', iconClass: 'fa-medal', themeColor: 'bg-slate-400', iconTextClass: 'text-zinc-950', prize1st: '6382', prize2nd: '2941', prize3rd: '8055', special: ['1472','3580','4691','5702','6813','7924','8035','9146','0257','1368'], consolation: ['2479','3581','4692','5703','6814','7925','8036','9147','0258','1369'] }
+        };
+
+        // Realtime Listener from Firebase Cloud
+        customerDbRef.on('value', (snapshot) => {
+            const payload = snapshot.val();
+            if (payload && payload.apps) {
+                appData = payload.apps;
+                updateHomeCardsSummary();
+                renderAppView();
+                showToast('Live Updated from Cloud! (' + (payload.updatedApp || 'Results') + ')');
+            }
+        });
+
+        let historyLogs = JSON.parse(localStorage.getItem('bd4d_customer_history')) || [];
+        let favourites = JSON.parse(localStorage.getItem('bd4d_customer_favourites')) || [];
+
+        window.onload = function() {
+            const today = new Date();
+            document.getElementById('liveDateText').innerText = `${today.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })} (${today.toLocaleDateString('en-US', { weekday: 'short' })})`;
+            updateUSSDPreview();
+            renderAppView();
+        };
+
+        function updateHomeCardsSummary() {
+            Object.keys(appData).forEach(name => {
+                const el = document.getElementById('grid-1st-' + name);
+                if (el && appData[name]) el.innerText = '1st: ' + appData[name].prize1st;
+            });
+        }
+
+        function selectApp(appName) {
+            currentApp = appName;
+            Object.keys(appData).forEach(name => {
+                const tab = document.getElementById('tab-' + name);
+                if (tab) tab.className = name === appName ? 'app-tab flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-700 text-white shadow' : 'app-tab flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-zinc-700 text-zinc-300 hover:bg-zinc-600';
+            });
+            renderAppView();
+        }
+
+        function renderAppView() {
+            const data = appData[currentApp];
+            if (!data) return;
+            document.getElementById('resultAppTitle').innerText = currentApp + ' Results';
+            document.getElementById('drawNumber').innerText = data.drawNumber || '';
+            if (data.drawDate) document.getElementById('drawDate').innerText = data.drawDate;
+            const badge = document.getElementById('resultAppBadgeIcon');
+            badge.className = 'w-8 h-8 rounded-lg ' + data.themeColor + ' flex items-center justify-center ' + data.iconTextClass + ' text-sm font-bold shadow';
+            badge.innerHTML = '<i class="fa-solid ' + data.iconClass + '"></i>';
+            document.getElementById('prize1st').innerText = data.prize1st;
+            document.getElementById('prize2nd').innerText = data.prize2nd;
+            document.getElementById('prize3rd').innerText = data.prize3rd;
+            document.getElementById('specialGrid').innerHTML = data.special.map(num => '<span>' + num + '</span>').join('');
+            document.getElementById('consolationGrid').innerHTML = data.consolation.map(num => '<span>' + num + '</span>').join('');
+            updateFavIcon();
+        }
+
+        function showView(viewName) {
+            ['grid', 'result', 'history', 'favourites'].forEach(v => document.getElementById('view-' + v).classList.add('hidden'));
+            document.getElementById('view-' + viewName).classList.remove('hidden');
+            const backBtn = document.getElementById('backBtn');
+            if (viewName !== 'grid') backBtn.classList.remove('hidden'); else backBtn.classList.add('hidden');
+            ['grid', 'history', 'favourites'].forEach(nav => {
+                const navEl = document.getElementById('nav-' + nav);
+                if (navEl) navEl.className = nav === viewName ? 'flex flex-col items-center justify-center text-red-500' : 'flex flex-col items-center justify-center text-zinc-400';
+            });
+            if (viewName === 'history') renderHistory();
+            if (viewName === 'favourites') renderFavourites();
+        }
+
+        function checkCustomerNumber() {
+            const input = document.getElementById('checkNumberInput').value.trim();
+            const resultBox = document.getElementById('checkResultBox');
+            if (input.length !== 4) {
+                resultBox.className = 'mt-3 p-2.5 rounded-lg text-xs border bg-red-950/60 border-red-700 text-red-200';
+                resultBox.innerHTML = 'Please enter a valid 4-digit number.';
+                resultBox.classList.remove('hidden');
+                return;
+            }
+            const matches = [];
+            Object.entries(appData).forEach(([appName, data]) => {
+                if (data.prize1st === input) matches.push(appName + ' — 1st Prize');
+                if (data.prize2nd === input) matches.push(appName + ' — 2nd Prize');
+                if (data.prize3rd === input) matches.push(appName + ' — 3rd Prize');
+                if (data.special.includes(input)) matches.push(appName + ' — Special Prize');
+                if (data.consolation.includes(input)) matches.push(appName + ' — Consolation Prize');
+            });
+            logHistory('Checked: ' + input);
+            if (matches.length > 0) {
+                resultBox.className = 'mt-3 p-3 rounded-lg text-xs border bg-emerald-950/70 border-emerald-600 text-emerald-200';
+                resultBox.innerHTML = '<div class="font-bold text-emerald-400 mb-1.5">অভিনন্দন! আপনার নম্বরটি মিলে গেছে:</div><ul class="list-disc list-inside space-y-1">' + matches.map(m => '<li>' + m + '</li>').join('') + '</ul>';
+            } else {
+                resultBox.className = 'mt-3 p-2.5 rounded-lg text-xs border bg-zinc-900 border-zinc-700 text-zinc-300';
+                resultBox.innerHTML = 'নম্বর <span class="font-mono font-bold text-white">' + input + '</span> আজকের কোনো পুরস্কারের সাথে মিলেনি।';
+            }
+            resultBox.classList.remove('hidden');
+        }
+
+        function copyCurrentResult() {
+            const data = appData[currentApp];
+            const text = `Live BD_4D Results (${currentApp}) - ${document.getElementById('drawDate').innerText}\n1st: ${data.prize1st} | 2nd: ${data.prize2nd} | 3rd: ${data.prize3rd}\nSpecial: ${data.special.join(', ')}\nConsolation: ${data.consolation.join(', ')}`;
+            const d = document.createElement('textarea'); document.body.appendChild(d); d.value = text; d.select(); document.execCommand('copy'); document.body.removeChild(d);
+            showToast('রেজাল্ট কপি করা হয়েছে!');
+        }
+
+        function updateUSSDPreview() {
+            const val = document.getElementById('ussdInput').value.trim();
+            document.getElementById('ussdResultText').innerText = '*155*' + val + '#';
+            document.getElementById('ussdDialBtn').href = 'tel:*155*' + val + '%23';
+        }
+
+        function copyUSSDCode() {
+            const code = document.getElementById('ussdResultText').innerText;
+            const d = document.createElement('textarea'); document.body.appendChild(d); d.value = code; d.select(); document.execCommand('copy'); document.body.removeChild(d);
+            showToast('USSD কোড কপি হয়েছে: ' + code);
+        }
+
+        function refreshResults() {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('fa-spin');
+            setTimeout(() => icon.classList.remove('fa-spin'), 600);
+            showToast('ক্লাউড থেকে রিফ্রেশ করা হয়েছে!');
+        }
+
+        function saveFavouriteAppNumber() {
+            const data = appData[currentApp];
+            const exists = favourites.some(f => f.app === currentApp && f.prize1st === data.prize1st);
+            if (!exists) {
+                favourites.push({ id: Date.now(), app: currentApp, prize1st: data.prize1st, prize2nd: data.prize2nd, prize3rd: data.prize3rd });
+                showToast('ফেভারিটে সেভ করা হয়েছে!');
+            } else {
+                favourites = favourites.filter(f => !(f.app === currentApp && f.prize1st === data.prize1st));
+                showToast('ফেভারিট থেকে সরানো হয়েছে।');
+            }
+            localStorage.setItem('bd4d_customer_favourites', JSON.stringify(favourites));
+            updateFavIcon();
+        }
+
+        function updateFavIcon() {
+            const data = appData[currentApp];
+            const exists = favourites.some(f => f.app === currentApp && f.prize1st === data.prize1st);
+            document.getElementById('favIcon').className = exists ? 'fa-solid fa-star text-yellow-400' : 'fa-regular fa-star text-yellow-400';
+        }
+
+        function renderFavourites() {
+            const container = document.getElementById('favouritesList');
+            if (!favourites.length) { container.innerHTML = '<div class="text-center text-xs text-zinc-500 py-8">কোনো সেভ করা রেজাল্ট নেই।</div>'; return; }
+            container.innerHTML = favourites.map(item => `<div class="bg-zinc-800 p-3 rounded-xl border border-zinc-700 flex justify-between items-center"><div><span class="text-xs font-bold text-red-400">${item.app}</span><div class="flex gap-3 text-sm font-mono mt-1"><span class="text-white font-bold">1st: ${item.prize1st}</span><span class="text-zinc-400">2nd: ${item.prize2nd}</span></div></div><button onclick="removeFavourite(${item.id})" class="text-zinc-500 hover:text-red-400 p-1.5"><i class="fa-solid fa-trash"></i></button></div>`).join('');
+        }
+        function removeFavourite(id) {
+            favourites = favourites.filter(f => f.id !== id);
+            localStorage.setItem('bd4d_customer_favourites', JSON.stringify(favourites));
+            renderFavourites(); updateFavIcon();
+        }
+        function logHistory(txt) {
+            historyLogs.unshift({ id: Date.now(), text: txt, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+            if (historyLogs.length > 20) historyLogs.pop();
+            localStorage.setItem('bd4_customer_history', JSON.stringify(historyLogs));
+        }
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            if (!historyLogs.length) { container.innerHTML = '<div class="text-center text-xs text-zinc-500 py-8">কোনো হিস্ট্রি নেই।</div>'; return; }
+            container.innerHTML = historyLogs.map(l => `<div class="bg-zinc-800/70 p-2.5 rounded-lg border border-zinc-700 flex justify-between items-center text-xs"><span class="text-zinc-200">${l.text}</span><span class="text-[10px] text-zinc-500 font-mono">${l.time}</span></div>`).join('');
+        }
+        function clearHistory() { historyLogs = []; localStorage.removeItem('bd4d_customer_history'); renderHistory(); }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+        function hideToast() { document.getElementById('toast').classList.add('hidden'); }
+    </script>
+</body>
+</html>
